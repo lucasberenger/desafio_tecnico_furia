@@ -1,7 +1,10 @@
-import os
-import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
+import requests
+import json
+import os
 
 load_dotenv()
 
@@ -10,6 +13,39 @@ url = os.getenv('URL')
 def fetch_page(url: str) -> str:
     response = requests.get(url)
     return response.text
+
+
+def fetch_page_js(url: str) -> str:
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    driver = webdriver.Chrome(options=options)
+
+    match_results = []
+
+    try:
+        driver.get(url)
+
+        dates = driver.find_elements(By.CLASS_NAME, "MatchList__MatchListDate-sc-1pio0qc-0")
+
+        for date in dates:
+            match_date = date.text.strip()
+            
+            next_element = date.find_element(By.XPATH, 'following-sibling::a')
+
+            if next_element:
+                match_result = next_element.text.strip()
+
+                match_results.append({
+                    'date': match_date,
+                    'result': match_result
+                })
+
+    
+    
+    finally:
+        driver.quit()
+
+    return json.dumps(match_results, ensure_ascii=False, indent=4)
 
 
 def extract_nicknames(container, class_prefix) -> list:
