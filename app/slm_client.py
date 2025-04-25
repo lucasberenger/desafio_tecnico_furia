@@ -7,7 +7,7 @@ load_dotenv()
 
 def generate_answer(data: list) -> str:
     prompt = f""" 
-A seguir estão alguns dados do time de Counter Strike da Furia.
+A seguir estão alguns dados do time de Counter Strike da FURIA.
 
 {json.dumps(data, indent=2)}
 
