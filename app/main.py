@@ -9,7 +9,7 @@ load_dotenv()
 app = FastAPI()
 
 @app.get('/update_data')
-def home():
+def update_data():
     return run_scrapers()
 
 
