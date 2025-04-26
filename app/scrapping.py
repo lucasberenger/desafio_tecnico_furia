@@ -2,29 +2,18 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
-from .redis_client import r
-from redis.exceptions import ConnectionError 
+from .redis_client import r, save_data_on_redis
 import requests
 import json
 import os
 
 load_dotenv()
 
-URL = os.getenv('URL')
-URL_RESULTS = os.getenv('URL_RESULTS')
+URL=os.getenv('URL')
+URL_RESULTS=os.getenv('URL_RESULTS')
 LINEUP_KEY=os.getenv('LINEUP_KEY')
 NEWS_KEY=os.getenv('NEWS_KEY')
 RESULTS_KEY=os.getenv('RESULTS_KEY')
-
-def save_data_on_redis(data: dict, key: str) -> bool:
-    try:
-        return r.set(key, json.dumps(data, ensure_ascii=False, indent=4), ex=60)
-    except ConnectionError as e:
-        print(f'Error trying to connect with Redis: {e}')
-        return False
-    except Exception as e:
-        print(f'An error occured trying to save on Redis: ({key}: {e})')
-        return False
 
 
 def fetch_page(url: str) -> str:
@@ -114,8 +103,8 @@ def get_latest_news(content: str) -> dict:
     return {'Redis': True, 'Data': news_data}   
 
 
-def run_scrapers():
-    print("Iniciando scraping...")
+def run_scrapers() -> bool:
+    
     try:
         page_content = fetch_page(URL)
         lineup_result = get_lineup_info(page_content)
@@ -127,9 +116,12 @@ def run_scrapers():
         match_results_result = get_match_results(URL_RESULTS)
         print(f"Match results scraped and saved to Redis: {match_results_result['Redis']}")
 
-        print("Scraping concluído.")
+        return True
+
     except Exception as e:
-        print(f"Ocorreu um erro durante o scraping: {e}")
+        print(f"An error occurred: {e}")
+
+        return False
 
 if __name__ == '__main__':
     run_scrapers()
