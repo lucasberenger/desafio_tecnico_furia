@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
-from .redis_client import r, save_data_on_redis
+from .redis_client import save_data_on_redis
 import requests
 import os
 
