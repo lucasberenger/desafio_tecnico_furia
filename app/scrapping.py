@@ -4,7 +4,6 @@ from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
 from .redis_client import r, save_data_on_redis
 import requests
-import json
 import os
 
 load_dotenv()
