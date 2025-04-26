@@ -23,5 +23,5 @@ def save_data_on_redis(data: dict, key: str) -> bool:
         print(f'Error trying to connect with Redis: {e}')
         return False
     except Exception as e:
-        print(f'An error occured trying to save on Redis: ({key}: {e})')
+        print(f'An error occurred trying to save on Redis: ({key}: {e})')
         return False
