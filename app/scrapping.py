@@ -2,20 +2,37 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from dotenv import load_dotenv
+from .redis_client import r
+from redis.exceptions import ConnectionError 
 import requests
 import json
 import os
 
 load_dotenv()
 
-url = os.getenv('URL')
+URL = os.getenv('URL')
+URL_RESULTS = os.getenv('URL_RESULTS')
+LINEUP_KEY=os.getenv('LINEUP_KEY')
+NEWS_KEY=os.getenv('NEWS_KEY')
+RESULTS_KEY=os.getenv('RESULTS_KEY')
+
+def save_data_on_redis(data: dict, key: str) -> bool:
+    try:
+        return r.set(key, json.dumps(data, ensure_ascii=False, indent=4), ex=60)
+    except ConnectionError as e:
+        print(f'Error trying to connect with Redis: {e}')
+        return False
+    except Exception as e:
+        print(f'An error occured trying to save on Redis: ({key}: {e})')
+        return False
+
 
 def fetch_page(url: str) -> str:
     response = requests.get(url)
     return response.text
 
 
-def fetch_page_js(url: str) -> str:
+def get_match_results(url: str) -> dict:
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
@@ -40,12 +57,15 @@ def fetch_page_js(url: str) -> str:
                     'result': match_result
                 })
 
-    
-    
     finally:
         driver.quit()
+    
+    save_data_on_redis(match_results, RESULTS_KEY)
 
-    return json.dumps(match_results, ensure_ascii=False, indent=4)
+    return {
+        'Redis': True,
+        'Data': match_results
+        }
 
 
 def extract_nicknames(container, class_prefix) -> list:
@@ -66,11 +86,15 @@ def get_lineup_info(content: str) -> dict:
     benched_players_container = soup.select_one('#AppContainer > div > div > div > div.sc-dkPtRN.id__BaseCol-sc-1x9brse-0.TYdVh.edCxBh > div.id__ContentContainer-sc-1x9brse-2.hlMjcl > div:nth-child(4)')
     coach_container = soup.select_one('#AppContainer > div > div > div > div.sc-dkPtRN.id__MenuCol-sc-1x9brse-1.UsnfG.elezoS > div.PlayerCardList__PlayerCardListContainer-sc-cuylet-0.kuAkeK')
 
-    return {
+    lineup = {
         "players": extract_nicknames(players_container, 'PlayerCard__PlayerNickName-sc-1u0zx4y'),
         "benched": extract_nicknames(benched_players_container, 'PlayerCard__PlayerNickName-sc-1u0zx4y'),
         "coach": extract_nicknames(coach_container, 'PlayerCard__PlayerInfo-sc-1u0zx4y')
     }
+
+    save_data_on_redis(lineup, LINEUP_KEY)
+
+    return {'Redis': True, 'Data': lineup}
 
 
 def get_latest_news(content: str) -> dict:
@@ -82,5 +106,30 @@ def get_latest_news(content: str) -> dict:
         return {'error': 'Latest news not found'}
 
     news_list = [news.get_text(strip=True) for news in news_containers]
+
+    news_data = {'Latest news': news_list} 
+
+    save_data_on_redis(news_data, NEWS_KEY)
     
-    return {'Latest news': news_list}
+    return {'Redis': True, 'Data': news_data}   
+
+
+def run_scrapers():
+    print("Iniciando scraping...")
+    try:
+        page_content = fetch_page(URL)
+        lineup_result = get_lineup_info(page_content)
+        print(f"Lineup scraped and saved to Redis: {lineup_result['Redis']}")
+
+        latest_news_result = get_latest_news(page_content)
+        print(f"Latest news scraped and saved to Redis: {latest_news_result['Redis']}")
+
+        match_results_result = get_match_results(URL_RESULTS)
+        print(f"Match results scraped and saved to Redis: {match_results_result['Redis']}")
+
+        print("Scraping concluído.")
+    except Exception as e:
+        print(f"Ocorreu um erro durante o scraping: {e}")
+
+if __name__ == '__main__':
+    run_scrapers()
