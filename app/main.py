@@ -1,11 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from .scrapping import run_scrapers 
-from .slm_client import UserMessage, generate_answer
+from .chatbot import find_similar_question, UserMessage
 from .redis_client import save_data_on_redis, get_data_from_redis
 from dotenv import load_dotenv
+import logging
 import os
 
 load_dotenv()
+logger = logging.getLogger(__name__)
+
 
 LINEUP_KEY=os.getenv('LINEUP_KEY')
 NEWS_KEY=os.getenv('NEWS_KEY')
@@ -42,28 +45,19 @@ def test():
 
 
 @app.post('/chat')
-async def chat(user_message: UserMessage):
-    """Endpoint to chat with FURIA Chatbot"""
+async def ask_furia(question: UserMessage):
+    try:
+        user_question = question.message.strip()
 
-    message = user_message.message
+        if not user_question:
+            raise HTTPException(status_code=400, detail="The question can't be empty.")
+        
+        return {"success": True,
+                "data" : find_similar_question(user_question)
+        }
+    
+    except Exception as e:
+        logger.error(f'Error at /chat: {e}')
+        raise HTTPException(status_code=500, detail="Internal error trying to process the question")
 
-    # Get data from database
-    lineup = get_data_from_redis(LINEUP_KEY)
-    last_results = get_data_from_redis(RESULTS_KEY)
-    latest_news = get_data_from_redis(NEWS_KEY)
-
-    data = {
-        "lineup": lineup if lineup else {},
-        "last_results": last_results if last_results else [],
-        "latest_news": latest_news.get('Latest news') if latest_news else []
-    }
-
-    user_message = UserMessage(message=message)
-
-    slm_response = generate_answer(data, user_message)
-
-    if slm_response:
-        return {'answer': slm_response}
-    else:
-        raise HTTPException(status_code=500, detail='Failed trying to get SLM response')
-   
+        
