@@ -52,7 +52,7 @@ async def ask_furia(question: UserMessage):
         if not user_question:
             raise HTTPException(status_code=400, detail="The question can't be empty.")
         
-        return {"success": True,
+        return {"success": True if find_similar_question(user_question) else False,
                 "data" : find_similar_question(user_question)
         }
     
