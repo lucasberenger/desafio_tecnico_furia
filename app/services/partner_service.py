@@ -3,20 +3,20 @@ from ..schemas.partner_dto import PartnerCreate
 from ..database.db import get_db
 from sqlalchemy.orm import Session
 
-def create_partner(partner: PartnerCreate, db: Session):
+def create_partner(partner_data: PartnerCreate, db: Session):
     """Create a new partner in the database."""
 
-    db_partner = db.query(Partner).filter(Partner.cpf == partner.cpf).first()
+    db_partner = db.query(Partner).filter(Partner.cpf == partner_data.cpf).first()
     if db_partner:
         raise ValueError("Partner with this CPF already exists.")
     
     new_partner = Partner(
-        name=partner.name,
-        age=partner.age,
-        cpf=partner.cpf,
-        email=partner.email,
-        phone=partner.phone,
-        social_media=partner.social_media
+        name=partner_data.name,
+        age=partner_data.age,
+        cpf=partner_data.cpf,
+        email=partner_data.email,
+        phone=partner_data.phone,
+        social_media=partner_data.social_media
     )
 
     db.add(new_partner)

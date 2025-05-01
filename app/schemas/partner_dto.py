@@ -19,4 +19,3 @@ class PartnerCreate(BaseModel):
             raise ValueError('Invalid CPF')
         
         return cpf
-
