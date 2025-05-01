@@ -1,12 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
-from .scrapping import run_scrapers 
-from .chatbot import find_similar_question, UserMessage
-from .redis_client import save_data_on_redis, get_data_from_redis
+from fastapi import FastAPI, HTTPException, Depends, Request
+from .chatbot.scrapping import run_scrapers 
+from .chatbot.chatbot import find_similar_question, UserMessage
 from .schemas.partner_dto import PartnerCreate
 from .services.partner_service import create_partner, delete_partner
 from sqlalchemy.orm import Session
 from .database.db import get_db
 from .database.init_db import init_db
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 import logging
 import os
@@ -23,6 +24,9 @@ app = FastAPI()
 
 init_db()
 
+templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 @app.get('/update_data')
 async def update_data():
     """Endpoint to update redis data"""
@@ -32,23 +36,6 @@ async def update_data():
         raise HTTPException(status_code=500, detail='Database update has been failed')
     
     return {'message': 'Database has been updated successfully.'}
-        
-
-
-@app.get('/test')
-def test():
-    """ Endpoint to test Redis """
-
-    test_data = {'message': 'test data'}
-    save_data_on_redis(test_data, 'test_key')
-
-    retrieved_data = get_data_from_redis('test_key')
-
-    if retrieved_data:
-        return {'status': 'success', 'key': 'test_key', 'data': retrieved_data}
-    
-    else:
-        return {'status': 'error', 'key': 'test_key', 'message': False}
 
 
 @app.post('/chat')
@@ -95,3 +82,8 @@ async def delete_partner_by_id(partner_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         logger.error(f'Error at /delete/{partner_id}: {e}')
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+@app.get("/test")
+async def get_home(request: Request):
+    return templates.TemplateResponse("admin.html", {"request": request})

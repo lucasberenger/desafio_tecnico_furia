@@ -1,4 +1,4 @@
-from .redis_client import get_data_from_redis
+from ..cache.redis_client import get_data_from_redis
 from dotenv import load_dotenv
 from rapidfuzz import fuzz, process
 from pydantic import BaseModel
