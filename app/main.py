@@ -1,7 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from .scrapping import run_scrapers 
 from .chatbot import find_similar_question, UserMessage
 from .redis_client import save_data_on_redis, get_data_from_redis
+from .schemas.partner_dto import PartnerCreate
+from .services.partner_service import create_partner, delete_partner
+from sqlalchemy.orm import Session
+from .database.db import get_db
+from .database.init_db import init_db
 from dotenv import load_dotenv
 import logging
 import os
@@ -15,6 +20,8 @@ NEWS_KEY=os.getenv('NEWS_KEY')
 RESULTS_KEY=os.getenv('RESULTS_KEY')
 
 app = FastAPI()
+
+init_db()
 
 @app.get('/update_data')
 async def update_data():
@@ -60,4 +67,31 @@ async def ask_furia(question: UserMessage):
         logger.error(f'Error at /chat: {e}')
         raise HTTPException(status_code=500, detail="Internal error trying to process the question")
 
-        
+@app.post('/register', response_model=dict)  
+async def register_partner(partner: PartnerCreate, db: Session = Depends(get_db)):
+    try:
+        new_partner = create_partner(partner, db)
+        return {
+            'success': True,
+            'message': 'Partner registered successfully.',
+            'data': {
+                'id': new_partner.id,
+                'name': new_partner.name
+            }
+        }
+    except ValueError as e:
+        logger.error(f'Error at /register: {e}')
+        raise HTTPException(status_code=400, detail=str(e))
+    
+
+@app.delete('/delete/{partner_id}', response_model=dict)
+async def delete_partner_by_id(partner_id: int, db: Session = Depends(get_db)):
+    try:
+        deleted_partner = delete_partner(partner_id, db)
+        return {
+            'success': True,
+            'message': deleted_partner['message']
+        }
+    except ValueError as e:
+        logger.error(f'Error at /delete/{partner_id}: {e}')
+        raise HTTPException(status_code=400, detail=str(e))
