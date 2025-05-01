@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from validate_docbr import CPF
 
 cpf_validator = CPF()
@@ -8,7 +8,7 @@ class PartnerCreate(BaseModel):
     name: str
     age: int
     cpf: str
-    email: str
+    email: EmailStr
     phone: str
     social_media: str
 
