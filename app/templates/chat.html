@@ -1,0 +1,97 @@
+{% extends 'base.html' %} {% block content %}
+<body
+  class="bg-gray-900 text-white flex items-center justify-center min-h-screen"
+>
+  <div class="w-full max-w-md bg-gray-800 rounded-xl shadow-lg p-4">
+    <h2 class="text-xl font-bold mb-4 text-center">Chatbot</h2>
+    <div
+      id="chatbox"
+      class="h-80 overflow-y-auto bg-gray-700 rounded p-3 mb-4 space-y-2"
+    ></div>
+    <form id="chat-form" class="flex">
+      <input
+        id="message-input"
+        type="text"
+        class="flex-1 px-4 py-2 rounded-l bg-gray-600 text-white focus:outline-none"
+        placeholder="Digite sua mensagem..."
+        required
+      />
+      <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-r font-semibold"
+      >
+        Enviar
+      </button>
+    </form>
+  </div>
+  <script>
+    const chatbox = document.getElementById("chatbox");
+    const chatForm = document.getElementById("chat-form");
+    const messageInput = document.getElementById("message-input");
+
+    function addMessage(text, sender = "bot") {
+      const msg = document.createElement("div");
+      msg.className = `p-2 rounded ${
+        sender === "user" ? "bg-blue-600 text-right ml-auto" : "bg-gray-600"
+      }`;
+      msg.textContent = text;
+      chatbox.appendChild(msg);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Welcome message
+    window.addEventListener("DOMContentLoaded", () => {
+      addMessage(
+        "Fala, FURIOSO! Eu sou o assistente da FURIA. Como posso te ajudar?"
+      );
+    });
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userMessage = messageInput.value.trim();
+      if (!userMessage) return;
+
+      addMessage(userMessage, "user");
+      messageInput.value = "";
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message: userMessage }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Processando a resposta do servidor
+          const players = data.response.players
+            ? data.response.players.join(", ")
+            : "Nenhum jogador encontrado";
+          const benched = data.response.benched
+            ? data.response.benched.join(", ")
+            : "Nenhum jogador de reserva encontrado";
+          const coach = data.response.coach
+            ? data.response.coach.join(", ")
+            : "Nenhum treinador encontrado";
+
+          // Construindo a mensagem de resposta do bot
+          let botResponse = "Aqui estão os jogadores: " + players + ".";
+          botResponse += benched ? ` Jogadores de reserva: ${benched}.` : "";
+          botResponse += coach ? ` Treinadores: ${coach}.` : "";
+
+          addMessage(botResponse);
+        } else {
+          addMessage("Desculpe, não entendi.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        addMessage("Erro na conexão com o servidor.");
+      }
+    });
+  </script>
+</body>
+
+{%endblock%}
