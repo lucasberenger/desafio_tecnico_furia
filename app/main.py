@@ -48,9 +48,9 @@ async def ask_furia(question: UserMessage):
         if not user_question:
             raise HTTPException(status_code=400, detail="The question can't be empty.")
         
-        return {"success": True if find_similar_question(user_question) else False,
-                "data" : find_similar_question(user_question)
-        }
+        answer = find_similar_question(user_question)
+        
+        return {"response": answer or "Sorry, I don't have an answer for that."}
     
     except Exception as e:
         logger.error(f'Error at /chat: {e}')
@@ -104,3 +104,7 @@ async def register(
 @app.get('/admin')
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+
+@app.get('/chat')
+async def chatbot_page(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
