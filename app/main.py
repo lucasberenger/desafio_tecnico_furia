@@ -29,15 +29,17 @@ init_db()
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-@app.get('/update_data')
+
+@app.post('/update_data')
 async def update_data():
     """Endpoint to update redis data"""
     update_data = run_scrapers()
-    
+
     if not update_data:
         raise HTTPException(status_code=500, detail='Database update has been failed')
-    
-    return {'message': 'Database has been updated successfully.'}
+
+    return RedirectResponse(url="/admin", status_code=303)
+
 
 @app.get('/chat')
 async def chatbot_page(request: Request, user_message: str = None):
@@ -69,19 +71,6 @@ async def ask_furia(question: UserMessage):
     except Exception as e:
         logger.error(f'Error at /chat: {e}')
         raise HTTPException(status_code=500, detail="Internal error trying to process the question")
-    
-
-@app.delete('/delete/{partner_id}', response_model=dict)
-async def delete_partner_by_id(partner_id: int, db: Session = Depends(get_db)):
-    try:
-        deleted_partner = delete_partner(partner_id, db)
-        return {
-            'success': True,
-            'message': deleted_partner['message']
-        }
-    except ValueError as e:
-        logger.error(f'Error at /delete/{partner_id}: {e}')
-        raise HTTPException(status_code=400, detail=str(e))
     
 
 @app.get("/register")
@@ -119,6 +108,17 @@ async def register(
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.get('/error')
-async def error_page(request: Request):
-    return templates.TemplateResponse("error.html", {"request": request})
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Custom exception handler for HTTP exceptions.
+    """
+    if exc.status_code == 404:
+        return templates.TemplateResponse("error.html", {"request": request}, status_code=404)
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """
+    Generic exception handler for all unhandled exceptions.
+    """
+    return templates.TemplateResponse("error.html", {"request": request}, status_code=500)
