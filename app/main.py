@@ -6,6 +6,7 @@ from .chatbot.scrapping import run_scrapers
 from .chatbot.chatbot import find_similar_question, UserMessage
 from .schemas.partner_dto import PartnerCreate
 from .services.partner_service import create_partner, delete_partner
+from .services import chart_service
 from sqlalchemy.orm import Session
 from .database.db import get_db
 from .database.init_db import init_db
@@ -107,6 +108,13 @@ async def register(
 @app.get('/admin')
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
+
+
+@app.get("/admin/dashboard")
+async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+    graphic = chart_service.generate_chart(db)
+    return templates.TemplateResponse("admin_dashboard.html", {"request": request, "graphic": graphic})
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):

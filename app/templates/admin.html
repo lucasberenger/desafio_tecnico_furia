@@ -16,14 +16,15 @@
       <a
         href="/chat"
         class="mt-4 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded inline-block"
-        >Voltar para Home</a
+        >Chatbot</a
+      >
+      <a
+        href="/admin/dashboard"
+        class="mt-4 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded inline-block"
+      >
+        Gráficos</a
       >
     </div>
-    {% if request.query_params.get('success') == '1' %}
-    <div class="bg-green-500 text-white px-4 py-2 rounded mb-6 text-center">
-      ✅ Dados atualizados com sucesso!
-    </div>
-    {% endif %}
   </div>
 </body>
 {% endblock %}
