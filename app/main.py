@@ -39,6 +39,17 @@ async def update_data():
     
     return {'message': 'Database has been updated successfully.'}
 
+@app.get('/chat')
+async def chatbot_page(request: Request, user_message: str = None):
+    answer = None
+    if user_message:
+        answer = find_similar_question(user_message)
+    return templates.TemplateResponse("chat.html", {
+        "request": request,
+        "user_message": user_message,
+        "answer": answer
+    }
+    )
 
 @app.post('/chat')
 async def ask_furia(question: UserMessage):
@@ -49,8 +60,11 @@ async def ask_furia(question: UserMessage):
             raise HTTPException(status_code=400, detail="The question can't be empty.")
         
         answer = find_similar_question(user_question)
-        
-        return {"response": answer or "Sorry, I don't have an answer for that."}
+
+        if isinstance(answer, dict):
+            return {"success": True, "response": answer}
+        else:
+            return {"success": False, "response": "Sorry, I don't have an answer for that."}
     
     except Exception as e:
         logger.error(f'Error at /chat: {e}')
@@ -105,6 +119,3 @@ async def register(
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
-@app.get('/chat')
-async def chatbot_page(request: Request):
-    return templates.TemplateResponse("chat.html", {"request": request})

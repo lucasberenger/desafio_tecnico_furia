@@ -40,22 +40,33 @@ def get_match_results(url: str) -> dict:
             next_element = date.find_element(By.XPATH, 'following-sibling::a')
 
             if next_element:
-                match_result = next_element.text.strip()
+                raw_text = next_element.text.strip().split("\n")
 
-                match_results.append({
-                    'date': match_date,
-                    'result': match_result
-                })
+                if len(raw_text) >= 7:
+                    match_results.append({
+                        'date': match_date,
+                        'time': raw_text[0],
+                        'team_1': raw_text[1],
+                        'score_1': int(raw_text[2]),
+                        'team_2': raw_text[3],
+                        'score_2': int(raw_text[4]),
+                        'format': raw_text[5],
+                        'tournament': raw_text[6],
+                        'highlights': raw_text[7] if len(raw_text) > 7 else None
+                    })
+                else:
+                    print(f"Formato inesperado em resultado: {raw_text}")
 
     finally:
         driver.quit()
-    
+
     save_data_on_redis(match_results, RESULTS_KEY)
 
     return {
         'Redis': True,
         'Data': match_results
-        }
+    }
+
 
 
 def extract_nicknames(container, class_prefix) -> list:
