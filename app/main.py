@@ -119,3 +119,6 @@ async def register(
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
+@app.get('/error')
+async def error_page(request: Request):
+    return templates.TemplateResponse("error.html", {"request": request})
