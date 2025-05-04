@@ -9,7 +9,16 @@ logger = logging.getLogger(__name__)
 
 EXPIRE_TIME=int(os.getenv('EXPIRE_TIME'))
 
-r = redis.Redis(host=os.getenv('REDIS_HOST'), port=os.getenv('REDIS_PORT'), db=0, decode_responses=True)
+# Redis settings for local development
+# r = redis.Redis(host=os.getenv('REDIS_HOST'), port=os.getenv('REDIS_PORT'), db=0, decode_responses=True)
+
+# Redis settings for production
+r = redis.Redis(
+    host=os.getenv('REDIS_HOST'),
+    port=os.getenv('REDIS_PORT'),
+    password=os.getenv('REDIS_PASSWORD'),
+    ssl=True
+)
 
 
 def get_data_from_redis(key: str):
