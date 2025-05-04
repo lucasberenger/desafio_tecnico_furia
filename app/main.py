@@ -74,11 +74,11 @@ async def ask_furia(question: UserMessage):
         raise HTTPException(status_code=500, detail="Internal error trying to process the question")
     
 
-@app.get("/register")
+@app.get("/")
 async def get_home(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
-@app.post('/register')
+@app.post('/')
 async def register(
     name: Annotated[str, Form()],
     age: Annotated[int, Form()],
@@ -99,10 +99,10 @@ async def register(
     )
         new_partner = create_partner(data, db)
 
-        return RedirectResponse(url='/admin', status_code=303)
+        return RedirectResponse(url='/chat', status_code=303)
     
     except ValueError as e:
-        logger.error(f'Error at /test: {e}')
+        logger.error(f'Error: {e}')
         raise HTTPException(status_code=400, detail=str(e))
     
 @app.get('/admin')
